@@ -10,48 +10,49 @@ describe init_param do
   let(:attribute) {@resource.property(attribute_name)}
 
 
-  before :each do
+  before(:each) do
     @class = init_param 
     @provider = double 'provider'
     allow(@provider).to receive(:name).and_return(:simple)
-    allow(Puppet::Type::Init_param).to receive(:defaultprovider).and_return @provider
+    allow(@class).to receive(:defaultprovider).and_return @provider
+    class Puppet::Type::Init_param; def self.default_sid; 'TEST'; end; end
     @resource = @class.new({:name  => 'MEMORY_TARGET'})
   end
 
 
-  it 'should have :name be its namevar' do
-    @class.key_attributes.should == [:name]
+  it 'should have :name and :parameter_name be its namevar' do
+    expect(@class.key_attributes).to eq([:name, :parameter_name, :instance])
   end
 
-  describe ':name' do
+  describe ':paremeter_name' do
 
-	let(:attribute_class) { @class.attrclass(:name) }
+    let(:attribute_class) { @class.attrclass(:parameter_name) }
 
-	it 'should pick its value from element NAME' do
-		raw_resource = InstancesResults['NAME','memory_target']
-      		expect(attribute_class.translate_to_resource(raw_resource)).to eq 'MEMORY_TARGET'
-    	end
+  	it 'should pick its value from element NAME' do
+  		raw_resource = InstancesResults['NAME','memory_target']
+  		expect(attribute_class.translate_to_resource(raw_resource)).to eq 'memory_target'
+  	end
 
-	it 'should raise an error when name not found in raw_results' do
-      		raw_resource = InstancesResults['NEMA','MY_NAME']
-      		expect{attribute_class.translate_to_resource(raw_resource)}.to raise_error(RuntimeError)
-    	end
+  	it 'should raise an error when name not found in raw_results' do
+  		raw_resource = InstancesResults['NEMA','MY_NAME']
+  		expect{attribute_class.translate_to_resource(raw_resource)}.to raise_error(RuntimeError)
+  	end
 
     it 'should munge to uppercase' do
-      @resource[:name] = 'sga_target'
-      expect(@resource[:name]).to eq 'SGA_TARGET'
+      @resource[:parameter_name] = 'sga_target'
+      expect(@resource[:parameter_name]).to eq 'sga_target'
     end
 
     it 'should not accept a name with whitespace' do
-      lambda { @resource[:name] = 'a a' }.should raise_error(Puppet::Error)
+      expect{@resource[:parameter_name] = 'a a' }.to raise_error(Puppet::Error)
     end
 
     it 'should not accept an empty name' do
-      lambda { @resource[:name] = '' }.should raise_error(Puppet::Error)
+      expect{@resource[:parameter_name] = '' }.to raise_error(Puppet::Error)
     end
 
     it_behaves_like 'an easy_type attribute', {
-      :attribute          => :name,
+      :attribute          => :parameter_name,
       :result_identifier  => 'NAME',
       :raw_value          => 'MEMORY_TARGET',
       :test_value         => 'MEMORY_TARGET',

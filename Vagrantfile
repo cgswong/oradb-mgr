@@ -8,6 +8,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "oracle"
 
   config.vm.provision :shell, :inline => "ln -sf /vagrant /etc/puppet/modules/oracle"
-  config.vm.provision :shell, :inline => "puppet module isntall hajee/easy_type"
+  config.vm.provision :shell, :inline => "puppet module install hajee/easy_type"
 
 end

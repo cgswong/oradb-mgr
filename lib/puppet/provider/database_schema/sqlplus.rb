@@ -1,9 +1,9 @@
-require 'utils/oracle_access'
+require 'ora_utils/oracle_access'
 require 'easy_type'
 
 Puppet::Type.type(:database_schema).provide(:sqlplus) do
   include EasyType::Provider
-  include ::Utils::OracleAccess
+  include ::OraUtils::OracleAccess
 
   desc "Manage Oracle database schema;s via regular SQL"
 
