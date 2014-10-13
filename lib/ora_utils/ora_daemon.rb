@@ -44,8 +44,9 @@ class OraDaemon < EasyType::Daemon
 
     def connect_to_oracle
       Puppet.info "Connecting to Oracle sid #{@sid} with user #{@oraUser}"
-      if @oraUser.downcase == 'sysdba'
-        execute_command "connect / as sysdba;"
+      case @oraUser.downcase
+      when 'sysdba', 'sysasm'
+        execute_command "connect / as #{@oraUser}\;"
       else
         execute_command "connect #{@oraUser}/#{@oraPassword};"
       end
@@ -53,6 +54,6 @@ class OraDaemon < EasyType::Daemon
 
     def initial_setup
       execute_command template('puppet:///modules/oracle/setup.sql.erb', binding)
-    end   
+    end
 
 end

@@ -26,7 +26,7 @@ module OraUtils
 	  end
 
 	  def asm_sids
-	  	sids.collect{|sid| sid =~ ASM_REGXP}
+	  	sids.select{|sid| sid =~ ASM_REGXP}
 	  end
 
 	  def database_sids
@@ -39,9 +39,9 @@ module OraUtils
 	  	end
 	  end
 
-	  def running_asm_sdis
+	  def running_asm_sids
 	  	asm_sids.select do |sid|
-	  		`pgrep -f ^asm_pmon_\\#{sid}$` != ''
+	  		`pgrep -f ^asm_pmon_\\\\#{sid}$` != ''
 	  	end
 	  end
 

@@ -21,7 +21,7 @@
 
 ##Overview
 
-This module contains a couple of Puppet custom types to manage 'stuff' in an Oracle database. At this point in time we support manage tablespacses, oracle users, grants, roles and services. To learn more, check [the blog post](http://hajee.github.io/2014/02/23/using-puppet-to-manage-oracle/)
+This module contains a couple of Puppet custom types to manage 'stuff' in an Oracle database. At this point in time we support manage tablespaces, oracle users, grants, roles, init parameters, asm diskgroups, threads and services. To learn more, check [the blog post](http://hajee.github.io/2014/02/23/using-puppet-to-manage-oracle/)
 
 ##Module Description
 
@@ -30,13 +30,13 @@ This module contains custom types that can help you manage DBA objects in an Ora
 * create a tablespace
 * create a user with the required grants and quota's
 * create one or more roles
-* create one or more services 
+* create one or more services
 
 ##Setup
 
 ###What oracle affects
 
-The types in this module will change settings **inside** a Oracle Database. No changes will be made outside of the database. 
+The types in this module will change settings **inside** a Oracle Database. No changes are made outside of the database.
 
 ###Setup Requirements
 
@@ -59,7 +59,7 @@ The module contains the following types:
 
 ###listener
 
-This is the only module that does it's work outside of the Oracle database. It makes sure the Oracle SQL*Net listener is running. 
+This is the only module that does it's work outside of the Oracle database. It makes sure the Oracle SQL*Net listener is running.
 
 ```puppet
 listener {'SID':
@@ -72,7 +72,7 @@ The name of the resource *MUST* be the sid for which you want to start the liste
 
 ###Specifying the SID
 
-All types have a name like `sid\resource`. The sid is optional. If you don't specify the sid, the type will use the first database instance from the `/etc/oratab`  file. We advise you to use a full name, e.g. an sid and a resource name. This makes the manifest mutch more reseliant for changes in the environment. 
+All types have a name like `sid\resource`. The sid is optional. If you don't specify the sid, the type will use the first database instance from the `/etc/oratab`  file. We advise you to use a full name, e.g. an sid and a resource name. This makes the manifest much more resilient for changes in the environment.
 
 
 ###oracle_user
@@ -95,7 +95,7 @@ oracle_user{sid/user_name:
 
 ###tablespace
 
-This type allows you to manage a tablespace inside an Oracle Database. It recognises most of the options that [CREATE TABLESPACE](http://docs.oracle.com/cd/B28359_01/server.111/b28310/tspaces002.htm#ADMIN11359) supports. 
+This type allows you to manage a tablespace inside an Oracle Database. It recognises most of the options that [CREATE TABLESPACE](http://docs.oracle.com/cd/B28359_01/server.111/b28310/tspaces002.htm#ADMIN11359) supports.
 
 ```puppet
 tablespace {'sid/my_app_ts':
@@ -122,6 +122,7 @@ tablespace {'sid/my_undots_1':
 
 or a temporary taplespace:
 
+```puppet
 tablespace {'sid/my_temp_ts':
   ensure                    => present,
   datafile                  => 'my_temp_ts.dbf',
@@ -136,10 +137,9 @@ tablespace {'sid/my_temp_ts':
 }
 ```
 
-
 ###role
 
-This type allows you to create or delete a role inside an Oracle Database. It recognises a limit part of the options that [CREATE ROLE](http://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_6012.htm#SQLRF01311) supports. 
+This type allows you to create or delete a role inside an Oracle Database. It recognises a limit part of the options that [CREATE ROLE](http://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_6012.htm#SQLRF01311) supports.
 
 
 ```puppet
@@ -150,7 +150,7 @@ role {'sid/just_a_role':
 
 ###oracle_service
 
-This type allows you to create or delete a service inside an Oracle Database. 
+This type allows you to create or delete a service inside an Oracle Database.
 
 
 ```puppet
@@ -171,14 +171,75 @@ init_param{'sid/parameter/instance':
 }
 ```
 
+###asm_diskgroup
+
+This type allows you to manage your ASM diskgroups. Like the other Oracle types, you must specify the SID. But for this type it must be the ASM sid. Most of the times, this is `+ASM1`
+
+```puppet
+asm_diskgroup {'+ASM1/REDO':
+  ensure          => 'present',
+  redundancy_type => 'normal',
+  compat_asm      => '11.2.0.0.0',
+  compat_rdbms    => '11.2.0.0.0',
+  failgroups      => {
+    'CONTROLLER1' => { 'diskname' => 'REDOVOL1', 'path' => 'ORCL:REDOVOL1'},
+    'CONTROLLER2' => { 'diskname' => 'REDOVOL2', 'path' => 'ORCL:REDOVOL2'},
+  }
+}
+
+```
+
+At this point in time the type support just the creation and the removal of a diskgroup. Modification of diskgroups is not (yet) supported.
+
+
+###oracle_exec
+
+this type allows you run a specific SQL statement or an sql file on a specified instance.
+
+```puppet
+  oracle_exec{"instance/drop table application_users":
+    username => 'app_user',
+    password => 'password,'
+  }
+```
+
+This statement will execute the sql statement `drop table application_users` on the instance names `instance`. There is no way the type can check if it has already done this statement, so the developer must support this by using puppet `if` statements.
+
+
+```puppet
+oracle_exec{"instance/@/tmp/do_some_stuff.sql":
+  username  => 'app_user',
+  password  => 'password,'
+  logoutput => on_failure,  # can be true, false or on_failure
+}
+```
+
+This statement will run the sqlscript `/tmp/do_some_stuff.sql` on the instance named `instance`. Like the single statement variant, there is no way to check if the statement is already done. So the developer must check for this himself.
+
+When you don't specify the username and the password, the type will connect as `sysdba`.
+
+
+
+###oracle_thread
+
+This type allows you to enable a thread. Threads are used in Oracle RAC installations. This type might not be very useful for regular use, but it is used in the [Oracle RAC module](https://forge.puppetlabs.com/hajee/ora_rac).
+
+
+```puppet
+oracle_thread{"instance_name/2":
+  ensure  => 'enabled',
+}
+```
+
+This enables thread 2 on instance named `instance_name`
 
 ##Limitations
 
- This module is tested on Oracle 11 on CentOS and Redhat. It will probably work on other Linux distributions. It will definitely **not** work on Windows. As far as Oracle compatibility. Most of the sql commands's it creates under the hood are pretty much Oracle version independent. It should work on most Oracle versions. 
+This module is tested on Oracle 11 on CentOS and Redhat. It will probably work on other Linux distributions. It will definitely **not** work on Windows. As far as Oracle compatibility. Most of the sql commands's it creates under the hood are pretty much Oracle version independent. It should work on most Oracle versions.
 
 ##Development
 
-This is an open projects, and contributions are welcome. 
+This is an open projects, and contributions are welcome.
 
 ###OS support
 
@@ -229,8 +290,4 @@ And run the tests from the root of the source code:
     rake test
 
 We are currently working on getting the acceptance test running as well.
-
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/hajee/oracle/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 

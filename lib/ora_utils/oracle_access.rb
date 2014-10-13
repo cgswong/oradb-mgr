@@ -10,6 +10,23 @@ module OraUtils
       parent.extend(OracleAccess)
     end
 
+
+    ##
+    #
+    # Use this function to execute Oracle statements on a set of specfied sids
+    #
+    # @param sids [Array] Array of SIDS
+    # @param command [String] this is the commands to be given
+    #
+    #
+    def sql_on( sids, command, parameters = {})
+      results = []
+      sids.each do |sid|
+        results = results + sql(command, {:sid => sid}.merge(parameters))
+      end
+      results
+    end
+
     ##
     #
     # Use this function to execute Oracle statements
@@ -18,8 +35,6 @@ module OraUtils
     #
     #
     def sql_on_all_sids( command, parameters = {})
-      username = parameters.fetch(:username) { 'sysdba'}
-      password = parameters[:password] # nil is allowed
       results = []
       oratab = OraTab.new
       oratab.running_database_sids.each do |sid|
@@ -38,10 +53,8 @@ module OraUtils
     #
     def sql( command, parameters = {})
       sid = parameters.fetch(:sid) { fail "SID must be present"}
-      username = parameters.fetch(:username) { 'sysdba'}
-      password = parameters[:password] # nil is allowed
       Puppet.info "Executing: #{command} on database #{sid}"
-      csv_string = execute_sql(command, :sid => sid, :username => username, :password => password)
+      csv_string = execute_sql(command, parameters)
       add_sid_to(convert_csv_data_to_hash(csv_string, [], :converters=> lambda {|f| f ? f.strip : nil}),sid)
     end
 
@@ -51,13 +64,14 @@ module OraUtils
     end
 
     def execute_sql(command, parameters)
+      os_user = parameters.fetch(:os_user) { 'oracle'}
       db_sid = parameters.fetch(:sid) { raise ArgumentError, "No sid specified"}
       username = parameters.fetch(:username) { 'sysdba'}
       password = parameters[:password] # null allowd
-      daemon = OraDaemon.run('oracle', db_sid, username, password)
+      daemon = OraDaemon.run(os_user, db_sid, username, password)
       outFile = Tempfile.new([ 'output', '.csv' ])
       outFile.close
-      FileUtils.chown('oracle', nil, outFile.path)
+      FileUtils.chown(os_user, nil, outFile.path)
       FileUtils.chmod(0644, outFile.path)
       if timeout_specified
         daemon.execute_sql_command(command, outFile.path, timeout_specified)
