@@ -3,8 +3,6 @@ newparam(:scope) do
 
   desc "The scope of the change."
 
-  newvalues(:spfile, :memory, :both)
-
-  defaultto 'spfile'
+  newvalues(:SPFILE, :MEMORY)
 
 end

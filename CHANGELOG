@@ -1,6 +1,13 @@
 History
 ========
 
+27-11-2014  version 0.6.0
+--------------------------
+- init params now works with a different syntax for specifying the name. Check the readme for details
+- Added support for 'growing' small file tablespaces. the type doesn't try to downscale a grown tablespace
+- Added support for running under a different os_user.
+
+
 07-10-2014  version 0.5.0
 --------------------------
 - Added custom type asm_diskgroup. This group supports creating and removing ASM disk groups. 

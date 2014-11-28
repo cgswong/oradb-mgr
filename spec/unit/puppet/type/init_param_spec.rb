@@ -16,7 +16,7 @@ describe init_param do
     allow(@provider).to receive(:name).and_return(:simple)
     allow(@class).to receive(:defaultprovider).and_return @provider
     class Puppet::Type::Init_param; def self.default_sid; 'TEST'; end; end
-    @resource = @class.new({:name  => 'MEMORY_TARGET'})
+    @resource = @class.new({:name  => 'SPFILE/MEMORY_TARGET'})
   end
 
 
@@ -30,7 +30,7 @@ describe init_param do
 
   	it 'should pick its value from element NAME' do
   		raw_resource = InstancesResults['NAME','memory_target']
-  		expect(attribute_class.translate_to_resource(raw_resource)).to eq 'memory_target'
+  		expect(attribute_class.translate_to_resource(raw_resource)).to eq 'MEMORY_TARGET'
   	end
 
   	it 'should raise an error when name not found in raw_results' do
@@ -40,7 +40,7 @@ describe init_param do
 
     it 'should munge to uppercase' do
       @resource[:parameter_name] = 'sga_target'
-      expect(@resource[:parameter_name]).to eq 'sga_target'
+      expect(@resource[:parameter_name]).to eq 'SGA_TARGET'
     end
 
     it 'should not accept a name with whitespace' do

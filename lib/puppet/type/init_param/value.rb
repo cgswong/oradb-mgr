@@ -7,4 +7,5 @@ newproperty(:value) do
     raw_resource.column_data('DISPLAY_VALUE')
   end
 
+
 end

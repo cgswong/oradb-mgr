@@ -18,20 +18,23 @@ newproperty(:quotas) do
   def unsafe_munge(value)
     return_value = {}
     value.each do | tablespace_name, quota|
-      return_value.merge!({ tablespace_name.upcase => quota })
+      return_value.merge!({ tablespace_name.upcase => quota.to_s })
     end
     return_value
+  end
+
+  def change_to_s(from, to)
+    "changed from #{from.inspect} to #{to.inspect}"
   end
 
   on_apply do | command_builder |
     all_quotas = value.collect do | tablespace, quota|
       "QUOTA #{quota} ON #{tablespace}"
     end
-    all_quotas.join(',')
+    all_quotas.join(' ')
   end
 
   private
-
   def self.quota_for(user, sid)
     translate(@raw_quotas.select{|q| q['USERNAME'] == user && q['SID'] == sid})
   end
@@ -53,7 +56,7 @@ newproperty(:quotas) do
     if value == '-1'
       'unlimited'
     else
-      Integer(value)
+      value.to_s
     end
   end
 

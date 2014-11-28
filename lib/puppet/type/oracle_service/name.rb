@@ -1,5 +1,8 @@
+require 'ora_utils/mungers'
+
 newparam(:name) do
   include EasyType
+  include OraUtils::Mungers::LeaveSidRestToUppercase
 
   isnamevar
 

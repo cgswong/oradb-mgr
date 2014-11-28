@@ -3,11 +3,16 @@ newproperty(:autoextend) do
 
   desc "Enable autoextension for the tablespace"
   newvalues(:on, :off)
+  aliasvalue(:yes, :on)
+  aliasvalue(:no, :off)
+  aliasvalue(true, :on)
+  aliasvalue(false, :off)
+
 
   to_translate_to_resource do | raw_resource|
     case raw_resource.column_data('AUT')
     when 'YES' then :on
-    when 'NO' then :no
+    when 'NO' then :off
     else
       fail('Invalid autoxtend found in tablespace resource.')
     end

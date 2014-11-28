@@ -4,12 +4,14 @@ $:.unshift(Pathname.new(__FILE__).dirname.parent.parent.parent.parent + 'easy_ty
 require 'easy_type'
 require 'ora_utils/oracle_access'
 require 'ora_utils/title_parser'
+require 'ora_utils/ora_tab'
+
+TITLE_PATTERN = /^((.*?\/)?(.*?)(:.*?)?(\@.*?)?)$/
 
 module Puppet
   newtype(:init_param) do
     include EasyType
     include ::OraUtils::OracleAccess
-    extend ::OraUtils::TitleParser
 
     desc "This resource allows you to manage Oracle parameters."
 
@@ -17,8 +19,12 @@ module Puppet
 
     ensurable
 
+    to_get_raw_resources do
+      specified_parameters_for(memory) + specified_parameters_for(spfile)
+    end
+
     def apply(command_builder)
-      statement = "alter system set \"#{parameter_name}\" = #{self[:value]} scope=#{scope} sid='#{instance}'"
+      statement = "alter system set #{parameter_name}=#{self[:value]} scope=#{scope} sid='#{instance}'"
       command_builder.add(statement, :sid => sid)
     end
 
@@ -32,40 +38,72 @@ module Puppet
     end
 
     on_destroy do | command_builder |
-      statement = "alter system reset \"#{parameter_name}\" scope=#{scope} sid='#{instance}'"
+      statement = "alter system reset #{parameter_name} scope=#{scope} sid='#{instance}'"
       command_builder.add(statement, :sid => sid)
     end
-
-    to_get_raw_resources do
-      specfied_parameters
-    end
-
-
-    def self.parse_instance_title
-      @@instance_parser ||= lambda { |instance_name| instance_name.nil? ? '*' : instance_name[0..-2]}
-    end
-
-
-    map_title_to_sid([:instance, parse_instance_title], :parameter_name) { /^((.*?\/)?(.*?\/)?(.*)?)$/}
 
     parameter :name
     parameter :parameter_name
     parameter :sid
+    parameter :scope
     parameter :instance
 
     property  :value
-    parameter :scope
-
 
     private
 
-    def self.specfied_parameters
-      all_parameters.select{|p| p['DISPLAY_VALUE'] != ''}
+    def self.parse_scope
+      lambda { |scope| scope[0..-2]}
     end
 
-    def self.all_parameters
-      sql_on_all_sids %q{select instance_name, name, display_value from gv$parameter, v$instance where gv$parameter.inst_id = v$instance.instance_number } 
+    def self.parse_instance
+      lambda { |instance_name| instance_name.nil? ? default_sid : instance_name[1..-1]}
     end
+
+    def self.parse_sid
+      lambda { |sid_name| sid_name.nil? ? default_sid : sid_name[2..0]}
+    end
+
+
+    def self.parse_name
+      lambda do |name|
+        result    = name.scan(TITLE_PATTERN)
+        groups    = result[0]
+        scope     = parse_scope.call(groups[1])
+        parameter = groups[2].upcase
+        instance  = parse_instance.call(groups[3])
+        sid       = parse_sid.call(groups[4])
+        "#{scope}/#{parameter}:#{instance}@#{sid}"
+      end
+    end
+
+    map_title_to_attributes(
+      [:name, parse_name],
+      [:scope, parse_scope], 
+      :parameter_name,
+      [:instance, parse_instance],
+      [:sid, parse_sid]) { TITLE_PATTERN}
+
+
+    def self.specified_parameters_for(set)
+      set.select{|p| p['DISPLAY_VALUE'] != ''}
+    end
+
+    def self.memory
+      sql_on_all_sids %q{select 'memory' as scope, instance_name, name, display_value from gv$parameter, gv$instance where gv$parameter.inst_id = gv$instance.instance_number } 
+    end
+
+    def self.spfile
+      sql_on_all_sids %q{select 'spfile' as scope, instance_name, name, display_value from gv$spparameter, gv$instance where gv$spparameter.inst_id = gv$instance.instance_number } 
+    end
+
+    def self.default_sid
+      oratab = OraUtils::OraTab.new
+      oratab.default_sid
+    rescue
+      ''
+    end
+
 
   end
 end

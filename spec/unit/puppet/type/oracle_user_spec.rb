@@ -96,8 +96,7 @@ describe oracle_user do
       :attribute          => :password,
       :result_identifier  => 'PASSWORD',
       :raw_value          => 'password',
-      :test_value         => 'password',
-      :apply_text         => "identified by password"
+      :test_value         => 'password'
     }
   end
 

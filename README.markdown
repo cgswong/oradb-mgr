@@ -116,7 +116,7 @@ You can also create an undo tablespace:
 ```puppet
 tablespace {'sid/my_undots_1':
   ensure                    => present,
-  content                   => 'undo',
+  contents                  => 'undo',
 }
 ```
 
@@ -161,15 +161,44 @@ oracle_service{'sid/my_app_service':
 
 ###init_param
 
-this type allows you to manage your init.ora parameters
+this type allows you to manage your init.ora parameters. You can manage your `spfile` parameters and your `memory` parameters. First the easy variant where you want to change an spfile parameter on your current sid for your current sid.
 
 
 ```puppet
-init_param{'sid/parameter/instance':
+init_param{'SPFILE/PARAMETER':
   ensure  => present,
   value   => 'the_value'
 }
 ```
+
+To manage the same parameter only the in-memory one, use:
+
+```puppet
+init_param{'MEMORY/PARAMETER':
+  ensure  => present,
+  value   => 'the_value'
+}
+```
+
+If you are running RAC and need to specify a parameter for an other instance, you can specify the instance as well.
+
+```puppet
+init_param{'MEMORY/PARAMETER:INSTANCE':
+  ensure  => present,
+  value   => 'the_value'
+}
+```
+
+Having more then one sid running on your node and you want to specify the sid you want to use, use `@SID` at the end.
+
+
+```puppet
+init_param{'MEMORY/PARAMETER:INSTANCE@SID':
+  ensure  => present,
+  value   => 'the_value'
+}
+```
+
 
 ###asm_diskgroup
 

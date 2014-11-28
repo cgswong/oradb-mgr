@@ -64,7 +64,7 @@ module OraUtils
     end
 
     def execute_sql(command, parameters)
-      os_user = parameters.fetch(:os_user) { 'oracle'}
+      os_user = parameters.fetch(:os_user) { ENV['ORA_OS_USER'] || 'oracle'}
       db_sid = parameters.fetch(:sid) { raise ArgumentError, "No sid specified"}
       username = parameters.fetch(:username) { 'sysdba'}
       password = parameters[:password] # null allowd

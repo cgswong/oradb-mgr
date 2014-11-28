@@ -29,7 +29,7 @@ module Puppet
     end
 
     on_create do | command_builder |
-      statement = password ?  "create user #{username} identified by #{password}" : "create user #{username}"
+      statement = password ?  "create user #{username} identified by \"#{password}\""  : "create user #{username}"
       command_builder.add(statement, :sid => sid)
     end
 
