@@ -1,6 +1,6 @@
 {
   "name": "hajee-oracle",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Bert Hajee",
   "summary": "the custom types needed to manage the basic setup of an Oracle database",
   "license": "Apache-2.0",
