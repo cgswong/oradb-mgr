@@ -22,7 +22,7 @@ module Puppet
     ensurable
 
     to_get_raw_resources do
-      sql_on_all_sids "select * from dba_roles"
+      sql_on_all_database_sids "select * from dba_roles"
     end
 
     on_create do | command_builder |
@@ -30,7 +30,7 @@ module Puppet
     end
 
     on_modify do | command_builder |
-      command_builder.add("alter role# {role_name}", :sid => sid)
+      info "Role alteration not possible, command ignored"
     end
 
     on_destroy do | command_builder |
@@ -43,6 +43,7 @@ module Puppet
     parameter :role_name
     parameter :sid
     property  :password
+    property  :grants
 
   end
 end

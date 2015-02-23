@@ -21,7 +21,7 @@ module Puppet
     desc "This resource allows you to manage threads in an Oracle database"
 
     to_get_raw_resources do
-      sql_on_all_sids %q{select thread#, enabled from v$thread}
+      sql_on_all_database_sids %q{select thread#, enabled from v$thread}
     end
 
     on_create do | command_builder |

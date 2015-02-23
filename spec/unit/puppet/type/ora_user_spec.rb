@@ -15,7 +15,7 @@ describe oracle_user do
     @provider = double 'provider'
     allow(@provider).to receive(:name).and_return(:simple)
     allow(@class).to receive(:defaultprovider).and_return @provider
-    class Puppet::Type::Oracle_user; def self.default_sid; 'TEST'; end; end
+    class Puppet::Type::Oracle_user; def self.default_database_sid; 'TEST'; end; end
     @resource = @class.new({:name  => 'SCOTT'})
   end
 

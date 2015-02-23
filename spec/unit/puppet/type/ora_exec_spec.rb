@@ -15,7 +15,7 @@ describe ora_exec do
     @provider = double 'provider'
     allow(@provider).to receive(:name).and_return(:sqlplus)
     allow(Puppet::Type::Ora_exec).to receive(:defaultprovider).and_return @provider
-    class Puppet::Type::Ora_exec; def self.default_sid; 'TEST'; end; end
+    class Puppet::Type::Ora_exec; def self.default_database_sid; 'TEST'; end; end
     @resource = @class.new({:title  => 'show_all'})
   end
 

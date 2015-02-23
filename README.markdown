@@ -12,8 +12,9 @@
     * [Setup requirements](#setup-requirements)
     * [Beginning with oracle](#beginning-with-oracle)
 4. [Usage - Configuration options and additional functionality](#usage)
-5. [Limitations - OS compatibility, etc.](#limitations)
-6. [Development - Guide for contributing to the module](#development)
+5. [Troubleshooting](#troubleshooting)
+6. [Limitations - OS compatibility, etc.](#limitations)
+7. [Development - Guide for contributing to the module](#development)
     * [OS support](#os-support)
     * [Oracle versions support](#oracle-version-support)
     * [Managable Oracle objects](#managable-oracle-objects)
@@ -40,7 +41,9 @@ The types in this module will change settings **inside** a Oracle Database. No c
 
 ###Setup Requirements
 
-To use this module, you need a running Oracle database. I can recommend [Edwin Biemonds Puppet OraDb module](https://github.com/biemond/puppet/tree/master/modules/oradb). The Oracle module itself is based on [easy_type](https://github.com/hajee/easy_type).
+To use this module, you need a running Oracle database and/or a running asm database. I can recommend [Edwin Biemonds Puppet OraDb module](https://github.com/biemond/puppet/tree/master/modules/oradb). 
+
+The Oracle module itself is based on [easy_type](https://github.com/hajee/easy_type). SO you need to have that module installed to.
 
 ###Beginning with oracle module
 
@@ -51,11 +54,24 @@ puppet module install hajee/easy_type
 puppet module install hajee/oracle
 ```
 
+
 ##Usage
 
 The module contains the following types:
 
-`ora_tablespace`, `ora_user`, `ora_role` and `ora_listener`. Here are a couple of examples on how to use them.
+- `ora_asm_diskgroup`
+- `ora_asm_volume`
+- `ora_exec`
+- `ora_database`
+- `ora_init_params`
+- `ora_listener`
+- `ora_role`
+- `ora_service`
+- `ora_tablespace`
+- `ora_thread`
+- `ora_user`
+
+Here are a couple of examples on how to use them.
 
 ###ora_listener
 
@@ -148,6 +164,16 @@ ora_role {'just_a_role@sid':
 }
 ```
 
+You can also add grants to a role:
+
+```puppet
+ora_role {'just_a_role@sid':
+  ensure    => present,
+  grants    => ['create session','create table'],
+}
+```
+
+
 ###ora_service
 
 This type allows you to create or delete a service inside an Oracle Database.
@@ -199,7 +225,6 @@ init_param{'MEMORY/PARAMETER:INSTANCE@SID':
 }
 ```
 
-
 ###ora_asm_diskgroup
 
 This type allows you to manage your ASM diskgroups. Like the other Oracle types, you must specify the SID. But for this type it must be the ASM sid. Most of the times, this is `+ASM1`
@@ -210,7 +235,7 @@ ora_asm_diskgroup {'REDO@+ASM1':
   redundancy_type => 'normal',
   compat_asm      => '11.2.0.0.0',
   compat_rdbms    => '11.2.0.0.0',
-  failgroups      => {
+  disks           => {
     'CONTROLLER1' => { 'diskname' => 'REDOVOL1', 'path' => 'ORCL:REDOVOL1'},
     'CONTROLLER2' => { 'diskname' => 'REDOVOL2', 'path' => 'ORCL:REDOVOL2'},
   }
@@ -219,7 +244,6 @@ ora_asm_diskgroup {'REDO@+ASM1':
 ```
 
 At this point in time the type support just the creation and the removal of a diskgroup. Modification of diskgroups is not (yet) supported.
-
 
 ###ora_exec
 
@@ -232,8 +256,17 @@ this type allows you run a specific SQL statement or an sql file on a specified 
   }
 ```
 
-This statement will execute the sql statement `drop table application_users` on the instance names `instance`. There is no way the type can check if it has already done this statement, so the developer must support this by using puppet `if` statements.
+This statement will execute the sql statement `drop table application_users` on the instance names `instance`. 
 
+You can use the `unless` parameter to only execute the statement in certain states. If the query specified in the `unless` parameter returns one or more records, the main statement is skipped.
+
+```puppet
+  ora_exec{ "create synonym ${user}.${synonym} for USER.${synonym}":
+    unless  => "select * from all_synonyms where owner=\'${user}\' and synonym_name=\'${synonym}\'",
+  }
+```
+
+You can also execute a script.
 
 ```puppet
 ora_exec{"instance/@/tmp/do_some_stuff.sql":
@@ -243,11 +276,9 @@ ora_exec{"instance/@/tmp/do_some_stuff.sql":
 }
 ```
 
-This statement will run the sqlscript `/tmp/do_some_stuff.sql` on the instance named `instance`. Like the single statement variant, there is no way to check if the statement is already done. So the developer must check for this himself.
+This statement will run the sqlscript `/tmp/do_some_stuff.sql` on the instance named `instance`. Use the `unless` parameter to just 
 
 When you don't specify the username and the password, the type will connect as `sysdba`.
-
-
 
 ###ora_thread
 
@@ -261,6 +292,135 @@ ora_thread{"2@sid":
 ```
 
 This enables thread 2 on instance named `sid`
+
+###ora_database
+
+This type allows you to create a database. In one of it's simplest form:
+
+```puppet
+ora_database{'oradb':
+  ensure          => present,
+  oracle_base     => '/opt/oracle',
+  oracle_home     => '/opt/oracle/app/11.04',
+  control_file    => 'reuse',
+}
+```
+
+The `ora_database` type uses structured types for some of the parameters. Here is part of an example with some of these structured parameters filled in:
+
+
+```puppet
+ora_database{'bert':
+  logfile_groups => [
+      {file_name => 'test1.log', size => '10M'},
+      {file_name => 'test2.log', size => '10M'},
+    ],
+  ...
+  default_tablespace => {
+    name      => 'USERS',
+    datafile  => {
+      file_name  => 'users.dbs',
+      size       => '1G',
+      reuse      =>  true,
+    },
+    extent_management => {
+      type          => 'local',
+      autoallocate  => true,
+    }
+  },
+  ...
+  datafiles       => [
+    {file_name   => 'file1.dbs', size => '1G', reuse => true},
+    {file_name   => 'file2.dbs', size => '1G', reuse => true},
+  ],
+  ...
+  default_temporary_tablespace => {
+    name      => 'TEMP',
+    type      => 'bigfile',
+    tempfile  => {
+      file_name  => 'tmp.dbs',
+      size       => '1G',
+      reuse      =>  true,
+      autoextend => {
+        next    => '10K',
+        maxsize => 'unlimited',
+      }
+    },
+    extent_management => {
+      type          => 'local',
+      uniform_size  => '1G',
+    },
+  },
+  ....
+  undo_tablespace   => {
+    name      => 'UNDOTBS',
+    type      => 'bigfile',
+    datafile  => {
+      file_name  => 'undo.dbs',
+      size       => '1G',
+      reuse      =>  true,
+    }
+  },
+  ....
+  sysaux_datafiles => [
+    {file_name   => 'sysaux1.dbs', size => '1G', reuse => true},
+    {file_name   => 'sysaux2.dbs', size => '1G', reuse => true},
+  ]
+
+```
+
+You can also specify some initialisation scripts.
+
+```
+ora_database{$db_name:
+  ensure            => present,
+  ...
+  config_scripts    => [
+    {'Catalog' => template('oracle/dbs/Catalog.sql.erb')},
+    {'Context' => template('oracle/dbs/Context.sql.erb')},
+  ],
+```
+
+These initialisation scripts will be executed in the order specified. The module has templates for the following scripts:
+
+- Catalog.sql.erb
+- Context.sql.erb
+- Cwmlite.sql.erb
+- Grants.sql.erb
+- Help.sql.erb
+- JServer.sql.erb
+- LockAccount.sql.erb
+- Post_Create_RAC.sql.erb
+- Psu.sql.erb
+- README
+- RenameRedo1.sql.erb
+- Xdb_Protocol.sql.erb
+
+You can find these templates in the `dbs` directory.
+
+##detailed description
+
+See the type documentation for all parameters.
+
+```sh
+$ puppet describe ora_database
+```
+You can also checkout an example in the [test directory](https://github.com/hajee/oracle/blob/master/tests/create_database.pp)
+
+
+##Troubleshooting
+
+When it fails on a Master-Agent setup you can do the following actions:
+
+- Check the time difference/timezone between all the puppet master and agent machines.
+- Update oracle and its dependencies on the puppet master.
+- After adding or refreshing the easy_type or oracle modules you need to restart all the PE services on the puppet master (this will flush the PE cache) and always do a puppet agent run on the Puppet master
+- To solve this error "no such file to load -- easy_type" you need just to do a puppet run on the puppet master when it is still failing you can move the easy_type module to its primary module location ( /etc/puppetlabs/puppet/module )
+
+When the `ora_database` creation fails:
+
+- First remove all `config_scripts`. Then start again. If the database creation run's fine, check the scripts.
+- Check if all the path's in the script exist and log file directories are writable by the specified Oracle user. 
 
 ##Limitations
 
@@ -296,6 +456,7 @@ Currently we have tested:
 It would be great if we could get it working and tested on:
 
 * Oracle 12
+* Oracle XE
 
 ###Managable Oracle objects
 

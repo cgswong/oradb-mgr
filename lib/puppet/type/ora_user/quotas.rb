@@ -7,7 +7,7 @@ newproperty(:quotas) do
   to_translate_to_resource do | raw_resource|
     username = raw_resource.column_data('USERNAME').upcase
     sid = raw_resource.column_data('SID')
-    @raw_quotas ||= sql_on_all_sids "select * from dba_ts_quotas"
+    @raw_quotas ||= sql_on_all_database_sids "select * from dba_ts_quotas"
     quota_for(username, sid)
   end
 

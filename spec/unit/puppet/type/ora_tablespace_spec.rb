@@ -15,7 +15,7 @@ describe tablespace do
     @provider = double 'provider'
     allow(@provider).to receive(:name).and_return(:simple)
     allow(@class).to receive(:defaultprovider).and_return @provider
-    class Puppet::Type::Tablespace; def self.default_sid; 'TEST'; end; end
+    class Puppet::Type::Tablespace; def self.default_database_sid; 'TEST'; end; end
     @resource = @class.new({:name  => 'PII_DATA'})
   end
 

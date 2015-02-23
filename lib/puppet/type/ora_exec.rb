@@ -28,6 +28,7 @@ module Puppet
     parameter :logoutput
     parameter :password
     parameter :username
+    parameter :unless
 
   end
 

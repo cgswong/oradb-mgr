@@ -1,6 +1,42 @@
 History
 ========
 
+07-02-2015  version 1.5.3
+--------------------------
+- Allow `ora_init_param` to manage ASM instances
+
+03-02-2015  version 1.5.2
+--------------------------
+- Added the `unless` parameter to `ora_exec`
+
+30-01-2015  version 1.5.1
+--------------------------
+- ora_tablespace max_size property now supports value unlimited
+
+29-01-2015  version 1.5.0
+--------------------------
+- Support for asm_volumes
+- Added a fact to get asm volume information (With help from Corey Osman)
+- Fixed ora_asm_diskgroup attribute au_size
+
+
+19-01-2015  version 1.4.0
+--------------------------
+- Add grant privileges function to ora_role (Thanks to Edward Groenenberg)
+- Now works on Oracle XE (Thanks to Andreas Wegmann)
+- ora_database can now remove clustered databases
+
+12-01-2015  version 1.3.0
+--------------------------
+- Re-enginered the ora_database
+- make the fact use of os_user work for both Oracle and ASM
+
+07-01-2015  version 1.2.0
+--------------------------
+- Added the initial implementation of ora_database
+- Add functionality to use a fact to specify os_user for oracle and asm. Fixes #36
+
+
 07-01-2015  version 1.1.0
 --------------------------
 - Cleaned up contents of distributed package

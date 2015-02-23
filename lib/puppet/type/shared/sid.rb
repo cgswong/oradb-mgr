@@ -18,5 +18,5 @@ end
 
 def sid
   oratab = OraUtils::OraTab.new
-  self[:sid].empty? ? oratab.default_sid : self[:sid]
+  self[:sid].empty? ? oratab.default_database_sid : self[:sid]
 end

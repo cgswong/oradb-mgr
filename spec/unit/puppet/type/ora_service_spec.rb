@@ -14,7 +14,7 @@ describe oracle_service do
     @class = oracle_service
     @provider = double 'provider'
     allow(@provider).to receive(:name).and_return(:simple)
-    class Puppet::Type::Oracle_service; def self.default_sid; 'TEST'; end; end
+    class Puppet::Type::Oracle_service; def self.default_database_sid; 'TEST'; end; end
     allow(@class).to receive(:defaultprovider).and_return @provider
     @resource = @class.new({:name  => 'SCOTT'})
   end

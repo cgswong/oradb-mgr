@@ -78,7 +78,7 @@ module Puppet
     end
 
     def self.parse_sid
-      lambda { |sid_name| sid_name.nil? ? default_sid : sid_name[1..17]}
+      lambda { |sid_name| sid_name.nil? ? default_database_sid : sid_name[1..17]}
     end
 
 

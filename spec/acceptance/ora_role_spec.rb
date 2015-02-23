@@ -5,7 +5,7 @@ describe 'ora_role' do
 
   it_behaves_like "an ensurable resource", {
     :resource_name      => 'ora_role',
-    :present_manifest   => "ora_role{test: ensure=>'present'}",
-    :absent_manifest    => "ora_role{test: ensure=>'absent'}",
+    :present_manifest   => "ora_role{test_role: ensure=>'present'}",
+    :absent_manifest    => "ora_role{test_role: ensure=>'absent'}",
   }
 end
